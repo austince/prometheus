@@ -133,6 +133,8 @@ func (c *flagConfig) setFeatureListOptions(logger log.Logger) error {
 			switch o {
 			case "promql-at-modifier":
 				c.enablePromQLAtModifier = true
+			case "remote-write-server":
+				c.web.RemoteWriteServer = true
 			case "":
 				continue
 			default:
@@ -284,7 +286,7 @@ func main() {
 		Default("2m").SetValue(&cfg.queryTimeout)
 
 	a.Flag("query.max-concurrency", "Maximum number of queries executed concurrently.").
-		Default("2000").IntVar(&cfg.queryConcurrency)
+		Default("20").IntVar(&cfg.queryConcurrency)
 
 	a.Flag("query.max-samples", "Maximum number of samples a single query can load into memory. Note that queries will fail if they try to load more samples than this into memory, so this also limits the number of samples a query can return.").
 		Default("50000000").IntVar(&cfg.queryMaxSamples)
