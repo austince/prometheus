@@ -318,14 +318,7 @@ func (api *API) Register(r *route.Router) {
 	r.Get("/status/flags", wrap(api.serveFlags))
 	r.Get("/status/tsdb", wrap(api.serveTSDBStatus))
 	r.Post("/read", api.ready(http.HandlerFunc(api.remoteRead)))
-
-	if api.remoteWriteHandler != nil {
-		r.Post("/write", api.ready(http.HandlerFunc(api.remoteWriteHandler.ServeHTTP)))
-	} else {
-		r.Post("/write", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			http.Error(w, "remote write receiver needs to be enabled with --enable-feature=remote-write-receiver", http.StatusNotFound)
-		}))
-	}
+	r.Post("/write", api.ready(http.HandlerFunc(api.remoteWrite)))
 
 	r.Get("/alerts", wrap(api.alerts))
 	r.Get("/rules", wrap(api.rules))
@@ -1537,6 +1530,14 @@ func filterExtLabelsFromMatchers(pbMatchers []*prompb.LabelMatcher, externalLabe
 	}
 
 	return filteredMatchers, nil
+}
+
+func (api *API) remoteWrite(w http.ResponseWriter, r *http.Request) {
+	if api.remoteWriteHandler != nil {
+		api.remoteWriteHandler.ServeHTTP(w, r)
+	} else {
+		http.Error(w, "remote write receiver needs to be enabled with --enable-feature=remote-write-receiver", http.StatusNotFound)
+	}
 }
 
 func (api *API) deleteSeries(r *http.Request) apiFuncResult {
