@@ -68,6 +68,11 @@ func (h *handler) write(ctx context.Context, req *prompb.WriteRequest) error {
 	defer func() {
 		if err != nil {
 			app.Rollback()
+			return
+		}
+		err = app.Commit()
+		if err != nil {
+			level.Error(h.logger).Log("msg", "Remote write commit failed", "err", err)
 		}
 	}()
 
@@ -81,5 +86,5 @@ func (h *handler) write(ctx context.Context, req *prompb.WriteRequest) error {
 		}
 	}
 
-	return app.Commit()
+	return nil
 }

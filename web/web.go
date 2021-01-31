@@ -244,7 +244,7 @@ type Options struct {
 	RemoteReadSampleLimit      int
 	RemoteReadConcurrencyLimit int
 	RemoteReadBytesInFrame     int
-	RemoteWriteServer          bool
+	RemoteWriteReceiver        bool
 
 	Gatherer   prometheus.Gatherer
 	Registerer prometheus.Registerer
@@ -323,7 +323,7 @@ func New(logger log.Logger, o *Options) *Handler {
 		h.runtimeInfo,
 		h.versionInfo,
 		o.Gatherer,
-		o.RemoteWriteServer,
+		o.RemoteWriteReceiver,
 	)
 
 	if o.RoutePrefix != "/" {

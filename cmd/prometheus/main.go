@@ -133,8 +133,8 @@ func (c *flagConfig) setFeatureListOptions(logger log.Logger) error {
 			switch o {
 			case "promql-at-modifier":
 				c.enablePromQLAtModifier = true
-			case "remote-write-server":
-				c.web.RemoteWriteServer = true
+			case "remote-write-receiver":
+				c.web.RemoteWriteReceiver = true
 			case "":
 				continue
 			default:
@@ -291,7 +291,7 @@ func main() {
 	a.Flag("query.max-samples", "Maximum number of samples a single query can load into memory. Note that queries will fail if they try to load more samples than this into memory, so this also limits the number of samples a query can return.").
 		Default("50000000").IntVar(&cfg.queryMaxSamples)
 
-	a.Flag("enable-feature", "Comma separated feature names to enable. Valid options: 'promql-at-modifier' to enable the @ modifier. See https://prometheus.io/docs/prometheus/latest/disabled_features/ for more details.").
+	a.Flag("enable-feature", "Comma separated feature names to enable. Valid options: 'promql-at-modifier' to enable the @ modifier, 'remote-write-receiver' to enable remote write receiver. See https://prometheus.io/docs/prometheus/latest/disabled_features/ for more details.").
 		Default("").StringsVar(&cfg.featureList)
 
 	promlogflag.AddFlags(a, &cfg.promlogConfig)

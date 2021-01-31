@@ -224,7 +224,7 @@ func NewAPI(
 	runtimeInfo func() (RuntimeInfo, error),
 	buildInfo *PrometheusVersion,
 	gatherer prometheus.Gatherer,
-	remoteWriteServer bool,
+	remoteWriteReceiver bool,
 ) *API {
 	a := &API{
 		QueryEngine: qe,
@@ -252,7 +252,7 @@ func NewAPI(
 		gatherer:                  gatherer,
 	}
 
-	if remoteWriteServer {
+	if remoteWriteReceiver {
 		a.remoteWriteHandler = remote.NewWriteHandler(logger, s)
 	}
 
@@ -321,6 +321,10 @@ func (api *API) Register(r *route.Router) {
 
 	if api.remoteWriteHandler != nil {
 		r.Post("/write", api.ready(http.HandlerFunc(api.remoteWriteHandler.ServeHTTP)))
+	} else {
+		r.Post("/write", http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			http.Error(w, "remote write receiver needs to be enabled with --enable-feature=remote-write-receiver", http.StatusNotFound)
+		}))
 	}
 
 	r.Get("/alerts", wrap(api.alerts))
