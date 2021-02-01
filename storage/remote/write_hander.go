@@ -48,7 +48,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = h.write(r.Context(), req)
 	switch err {
 	case nil:
-	case storage.ErrOutOfOrderSample:
+	case storage.ErrOutOfOrderSample, storage.ErrOutOfBounds, storage.ErrDuplicateSampleForTimestamp:
 		// Indicated an out of order sample is a bad request to prevent retires.
 		level.Error(h.logger).Log("msg", "Out of order sample from remote write", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -71,9 +71,6 @@ func (h *handler) write(ctx context.Context, req *prompb.WriteRequest) error {
 			return
 		}
 		err = app.Commit()
-		if err != nil {
-			level.Error(h.logger).Log("msg", "Remote write commit failed", "err", err)
-		}
 	}()
 
 	for _, ts := range req.Timeseries {

@@ -133,8 +133,10 @@ func (c *flagConfig) setFeatureListOptions(logger log.Logger) error {
 			switch o {
 			case "promql-at-modifier":
 				c.enablePromQLAtModifier = true
+				level.Info(logger).Log("msg", "Experimental promql-at-modifier enabled")
 			case "remote-write-receiver":
 				c.web.RemoteWriteReceiver = true
+				level.Info(logger).Log("msg", "Experimental remote-write-receiver enabled")
 			case "":
 				continue
 			default:
