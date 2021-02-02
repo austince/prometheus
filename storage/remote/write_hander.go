@@ -38,7 +38,7 @@ func NewWriteHandler(logger log.Logger, appendable storage.Appendable) http.Hand
 }
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	req, err := DecodeWriteRequest(r)
+	req, err := DecodeWriteRequest(r.Body)
 	if err != nil {
 		level.Error(h.logger).Log("msg", "Error decoding remote write request", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -500,8 +500,8 @@ func metricTypeToMetricTypeProto(t textparse.MetricType) prompb.MetricMetadata_M
 
 // DecodeWriteRequest from a http.Request into a prompb.WriteRequest, handling
 // snappy decompression.
-func DecodeWriteRequest(r *http.Request) (*prompb.WriteRequest, error) {
-	compressed, err := ioutil.ReadAll(r.Body)
+func DecodeWriteRequest(r io.Reader) (*prompb.WriteRequest, error) {
+	compressed, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

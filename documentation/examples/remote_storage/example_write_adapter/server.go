@@ -25,7 +25,7 @@ import (
 
 func main() {
 	http.HandleFunc("/receive", func(w http.ResponseWriter, r *http.Request) {
-		req, err := remote.DecodeWriteRequest(r)
+		req, err := remote.DecodeWriteRequest(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

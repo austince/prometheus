@@ -16,7 +16,6 @@ package remote
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -294,10 +293,7 @@ func TestDecodeWriteRequest(t *testing.T) {
 	buf, _, err := buildWriteRequest(writeRequestFixture.Timeseries, nil, nil)
 	require.NoError(t, err)
 
-	req, err := http.NewRequest("", "", bytes.NewReader(buf))
-	require.NoError(t, err)
-
-	actual, err := DecodeWriteRequest(req)
+	actual, err := DecodeWriteRequest(bytes.NewReader(buf))
 	require.NoError(t, err)
 	require.Equal(t, writeRequestFixture, actual)
 }
