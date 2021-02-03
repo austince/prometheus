@@ -49,7 +49,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch err {
 	case nil:
 	case storage.ErrOutOfOrderSample, storage.ErrOutOfBounds, storage.ErrDuplicateSampleForTimestamp:
-		// Indicated an out of order sample is a bad request to prevent retires.
+		// Indicated an out of order sample is a bad request to prevent retries.
 		level.Error(h.logger).Log("msg", "Out of order sample from remote write", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

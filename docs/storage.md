@@ -111,7 +111,7 @@ a set of interfaces that allow integrating with remote storage systems.
 
 ### Overview
 
-Prometheus integrates with remote storage systems in two ways:
+Prometheus integrates with remote storage systems in three ways:
 
 * Prometheus can write samples that it ingests to a remote URL in a standardized format.
 * Prometheus can receive samples from other Prometheus servers in a standardized format.
@@ -123,7 +123,7 @@ The read and write protocols both use a snappy-compressed protocol buffer encodi
 
 For details on configuring remote storage integrations in Prometheus, see the [remote write](configuration/configuration.md#remote_write) and [remote read](configuration/configuration.md#remote_read) sections of the Prometheus configuration documentation.
 
-The built-in remote write receiver can be enabled by setting the `--enable-feature=remote-write-receiver` command line flag. When enabled, the remote read receiver endpoint is `/api/v1/write`.
+The built-in remote write receiver can be enabled by setting the `--enable-feature=remote-write-receiver` command line flag. When enabled, the remote write receiver endpoint is `/api/v1/write`.
 
 For details on the request and response messages, see the [remote storage protocol buffer definitions](https://github.com/prometheus/prometheus/blob/master/prompb/remote.proto).
 
