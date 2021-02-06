@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -76,9 +77,32 @@ func TestOutOfOrder(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
+func TestCommitErr(t *testing.T) {
+	buf, _, err := buildWriteRequest(writeRequestFixture.Timeseries, nil, nil)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest("", "", bytes.NewReader(buf))
+	require.NoError(t, err)
+
+	appendable := &mockAppendable{
+		commitErr: fmt.Errorf("commit error"),
+	}
+	handler := NewWriteHandler(log.NewNopLogger(), appendable)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, req)
+
+	resp := recorder.Result()
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	require.Equal(t, "commit error\n", string(body))
+}
+
 type mockAppendable struct {
-	latest  int64
-	samples []mockSample
+	latest    int64
+	samples   []mockSample
+	commitErr error
 }
 
 type mockSample struct {
@@ -101,14 +125,14 @@ func (m *mockAppendable) Add(l labels.Labels, t int64, v float64) (uint64, error
 	return 0, nil
 }
 
-func (m *mockAppendable) AddFast(uint64, int64, float64) error {
+func (m *mockAppendable) Commit() error {
+	return m.commitErr
+}
+
+func (*mockAppendable) AddFast(uint64, int64, float64) error {
 	return fmt.Errorf("not implemented")
 }
 
-func (m *mockAppendable) Commit() error {
-	return nil
-}
-
-func (m *mockAppendable) Rollback() error {
+func (*mockAppendable) Rollback() error {
 	return fmt.Errorf("not implemented")
 }

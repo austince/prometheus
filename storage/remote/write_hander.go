@@ -62,8 +62,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *handler) write(ctx context.Context, req *prompb.WriteRequest) error {
-	var err error
+func (h *handler) write(ctx context.Context, req *prompb.WriteRequest) (err error) {
 	app := h.appendable.Appender(ctx)
 	defer func() {
 		if err != nil {
