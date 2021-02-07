@@ -16,6 +16,7 @@ package triton
 import (
 	"context"
 	"fmt"
+	"go.uber.org/goleak"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -80,6 +81,10 @@ var (
 
 func newTritonDiscovery(c SDConfig) (*Discovery, error) {
 	return New(nil, &c)
+}
+
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
 }
 
 func TestTritonSDNew(t *testing.T) {

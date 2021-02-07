@@ -54,7 +54,7 @@ const (
 )
 
 var (
-	// Http header
+	// HTTP header
 	userAgent = fmt.Sprintf("Prometheus/%s", version.Version)
 	// Custom events metric
 	eventCount = prometheus.NewCounterVec(

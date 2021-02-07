@@ -15,6 +15,7 @@ package refresh
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -70,14 +71,16 @@ func NewDiscovery(l log.Logger, mech string, interval time.Duration, refreshf fu
 	}
 }
 
+// ErrSkipUpdate can be returned from a refresh() call to short
+// circuit the update without error.
+var ErrSkipUpdate = errors.New("skip discovery update")
+
 // Run implements the Discoverer interface.
 func (d *Discovery) Run(ctx context.Context, ch chan<- []*targetgroup.Group) {
 	// Get an initial set right away.
 	tgs, err := d.refresh(ctx)
 	if err != nil {
-		if ctx.Err() != context.Canceled {
-			level.Error(d.logger).Log("msg", "Unable to refresh target groups", "err", err.Error())
-		}
+		d.handleError(ctx, err)
 	} else {
 		select {
 		case ch <- tgs:
@@ -94,9 +97,7 @@ func (d *Discovery) Run(ctx context.Context, ch chan<- []*targetgroup.Group) {
 		case <-ticker.C:
 			tgs, err := d.refresh(ctx)
 			if err != nil {
-				if ctx.Err() != context.Canceled {
-					level.Error(d.logger).Log("msg", "Unable to refresh target groups", "err", err.Error())
-				}
+				d.handleError(ctx, err)
 				continue
 			}
 
@@ -115,8 +116,19 @@ func (d *Discovery) refresh(ctx context.Context) ([]*targetgroup.Group, error) {
 	now := time.Now()
 	defer d.duration.Observe(time.Since(now).Seconds())
 	tgs, err := d.refreshf(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrSkipUpdate) {
 		d.failures.Inc()
 	}
 	return tgs, err
+}
+
+func (d *Discovery) handleError(ctx context.Context, err error) {
+	if errors.Is(err, ErrSkipUpdate) {
+		level.Debug(d.logger).Log("msg", "Update skipped", "reason", err.Error())
+		return
+	}
+
+	if ctx.Err() != context.Canceled {
+		level.Error(d.logger).Log("msg", "Unable to refresh target groups", "err", err.Error())
+	}
 }
