@@ -3,11 +3,16 @@ package xds
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"time"
+
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
-	"net/url"
-	"time"
+
+	_ "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	_ "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 )
 
 type DiscoveryMode string
@@ -15,6 +20,19 @@ type DiscoveryMode string
 const (
 	GRPCMode = DiscoveryMode("grpc")
 	HTTPMode = DiscoveryMode("http")
+)
+
+// The xDS protocol version
+type ProtocolVersion string
+
+const (
+	ProtocolV3 = ProtocolVersion("v3")
+)
+
+type ApiVersion string
+
+const (
+	V1Alpha1 = ApiVersion("v1alpha1")
 )
 
 type HTTPConfig struct {
@@ -32,12 +50,31 @@ var DefaultSDConfig = SDConfig{
 	},
 }
 
-// TODO: how to support different API versions?
 type SDConfig struct {
-	mode   DiscoveryMode
-	Server string        `yaml:"server,omitempty"`
-	Http   *HTTPConfig   `yaml:"http,omitempty"`
-	Grpc   *GRPCConfig   `yaml:"grpc,omitempty"`
+	mode            DiscoveryMode   // set from server protocol
+	Server          string          `yaml:"server,omitempty"`
+	Http            *HTTPConfig     `yaml:"http,omitempty"`
+	Grpc            *GRPCConfig     `yaml:"grpc,omitempty"`
+	ProtocolVersion ProtocolVersion `yaml:"protocolVersion"`
+	ApiVersion      ApiVersion      `yaml:"apiVersion"`
+}
+
+func validateProtocolVersion(version ProtocolVersion) error {
+	switch version {
+	case ProtocolV3:
+		return nil
+	default:
+		return fmt.Errorf("unsupported xDS protocol version %s. Only v3 is supported", version)
+	}
+}
+
+func validateApiVersion(version ApiVersion) error {
+	switch version {
+	case V1Alpha1:
+		return nil
+	default:
+		return fmt.Errorf("unsupported apiVersion %s. Only v1alpha1 is supported", version)
+	}
 }
 
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
@@ -48,6 +85,15 @@ func (c *SDConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err != nil {
 		return err
 	}
+
+	if err = validateProtocolVersion(c.ProtocolVersion); err != nil {
+		return err
+	}
+
+	if err = validateApiVersion(c.ApiVersion); err != nil {
+		return err
+	}
+
 	if len(c.Server) == 0 {
 		return errors.New("xds_sd: empty or null xDS server")
 	}
@@ -70,7 +116,7 @@ func (c *SDConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		c.mode = HTTPMode
 		return c.Http.Validate()
 	default:
-		return  fmt.Errorf("unsupported server protocol %s, must be either 'grpc'/'grpcs' or 'http'/'https'", parsedUrl.Scheme)
+		return fmt.Errorf("unsupported server protocol %s, must be either 'grpc'/'grpcs' or 'http'/'https'", parsedUrl.Scheme)
 	}
 
 	return nil

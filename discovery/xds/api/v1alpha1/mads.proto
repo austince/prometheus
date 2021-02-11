@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package prometheus.xds.v1alpha1;
+
+option go_package = "github.com/prometheus/prometheus/discovery/xds/api/v1alpha1";
+
+import "envoy/service/discovery/v3/discovery.proto";
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+// Monitoring Assignment Discovery Service (MADS).
+//
+// xDS API that is meant for consumption by monitoring systems, e.g. Prometheus.
+service MonitoringAssignmentDiscoveryService {
+  // GRPC
+  rpc DeltaMonitoringAssignments(stream envoy.service.discovery.v3.DeltaDiscoveryRequest)
+      returns (stream envoy.service.discovery.v3.DeltaDiscoveryResponse) {}
+
+  rpc StreamMonitoringAssignments(stream envoy.service.discovery.v3.DiscoveryRequest)
+      returns (stream envoy.service.discovery.v3.DiscoveryResponse) {}
+
+  // HTTP
+  rpc FetchMonitoringAssignments(envoy.service.discovery.v3.DiscoveryRequest)
+      returns (envoy.service.discovery.v3.DiscoveryResponse) {
+    option (google.api.http).post = "/v3/discovery:monitoring";
+    option (google.api.http).body = "*";
+  }
+}
+
+// MADS resource type.
+//
+// Describes a group of targets that need to be monitored.
+message MonitoringAssignment {
+
+  // MDS resource name.
+  //
+  // E.g., `/meshes/default/services/backend` or
+  // `/meshes/default/dataplanes/backend-01`.
+  string name = 1 [ (validate.rules).string = {min_bytes : 1} ];
+
+  // Describes a single target that needs to be monitored.
+  message Target {
+
+    // Labels associated with that particular target.
+    //
+    // E.g.,
+    // `{
+    //    "__address__" :      "192.168.0.1:8080",
+    //    "__metrics_path__" : "/metrics"]`,
+    //    "instance" :         "backend-01",
+    //  }`.
+    map<string, string> labels = 1;
+  }
+
+  // List of targets that need to be monitored.
+  repeated Target targets = 2;
+
+  // Labels associated with every target in that assignment.
+  //
+  // E.g., `{"job" : "backend"}`.
+  map<string, string> labels = 3;
+}
