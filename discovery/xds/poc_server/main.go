@@ -22,6 +22,7 @@ func main() {
 			{
 				Labels: map[string]string{
 					"__address__":      "127.0.0.1:6767",
+					"__instance__":     "testerooni",
 					"__metrics_path__": "/metrics",
 				},
 			},
@@ -58,13 +59,15 @@ func main() {
 
 	// mock assignments
 	http.HandleFunc("/v3/discovery:monitoring", func(w http.ResponseWriter, r *http.Request) {
-		decoder := json.NewDecoder(r.Body)
-		var req v3.DiscoveryRequest
-		if err := decoder.Decode(&req); err != nil {
-			w.WriteHeader(400)
-			fmt.Printf("Error decoding body %v\n", err)
-			return
-		}
+		fmt.Print("Handling discovery\n")
+
+		//decoder := json.NewDecoder(r.Body)
+		//var req v3.DiscoveryRequest
+		//if err := decoder.Decode(&req); err != nil {
+		//	w.WriteHeader(400)
+		//	fmt.Printf("Error decoding body %v\n", err)
+		//	return
+		//}
 
 		w.WriteHeader(200)
 		if _, err = w.Write(serializedDiscoveryRes); err != nil {
@@ -74,7 +77,7 @@ func main() {
 
 	// mock metrics
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-
+		fmt.Print("Handling metrics\n")
 	})
 
 	fmt.Printf("POC xDS server listening on port 6767\n")

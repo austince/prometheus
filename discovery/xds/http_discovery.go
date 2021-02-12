@@ -94,7 +94,9 @@ func (d *HTTPDiscovery) fetchDiscovery(ctx context.Context) (*v3.DiscoveryRespon
 		return nil, errors.Errorf("non 200 status '%d' response during xDS service discovery", resp.StatusCode)
 	}
 
-	var discoveryRes *v3.DiscoveryResponse
+	d.log.Log("Response", string(respBody))
+
+	discoveryRes := &v3.DiscoveryResponse{}
 	if err = json.Unmarshal(respBody, discoveryRes); err != nil {
 		return nil, err
 	}
@@ -111,7 +113,7 @@ func (d *HTTPDiscovery) refresh(ctx context.Context) ([]*targetgroup.Group, erro
 	var assignments []*v1alpha1.MonitoringAssignment
 	for _, res := range discoveryRes.Resources {
 
-		var assignment *v1alpha1.MonitoringAssignment
+		assignment := &v1alpha1.MonitoringAssignment{}
 		if err := json.Unmarshal(res.Value, assignment); err != nil {
 			d.log.Log("discovery fetch error", err)
 			return nil, err

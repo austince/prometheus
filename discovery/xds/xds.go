@@ -46,7 +46,7 @@ var DefaultSDConfig = SDConfig{
 }
 
 type SDConfig struct {
-	mode            DiscoveryMode   // set from server protocol
+	Mode            DiscoveryMode   // set from server protocol
 	Server          string          `yaml:"server,omitempty"`
 	Http            *HTTPConfig     `yaml:"http,omitempty"`
 	Grpc            *GRPCConfig     `yaml:"grpc,omitempty"`
@@ -104,11 +104,11 @@ func (c *SDConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	switch parsedUrl.Scheme {
 	case "grpc":
 	case "grpcs":
-		c.mode = GRPCMode
+		c.Mode = GRPCMode
 		return nil
 	case "http":
 	case "https":
-		c.mode = HTTPMode
+		c.Mode = HTTPMode
 		return c.Http.Validate()
 	default:
 		return fmt.Errorf("unsupported server protocol %s, must be either 'grpc'/'grpcs' or 'http'/'https'", parsedUrl.Scheme)
@@ -122,16 +122,16 @@ func init() {
 }
 
 func (c *SDConfig) Name() string {
-	return string("xds-" + c.mode)
+	return string("xds-" + c.Mode)
 }
 
 func (c *SDConfig) NewDiscoverer(opts discovery.DiscovererOptions) (discovery.Discoverer, error) {
-	switch c.mode {
+	switch c.Mode {
 	case GRPCMode:
 		return newGrpcDiscovery(c, opts.Logger)
 	case HTTPMode:
 		return newHttpDiscovery(c, opts.Logger)
 	default:
-		return nil, fmt.Errorf("invalid mode %s, must be either 'grpc' or 'http'", c.mode)
+		return nil, fmt.Errorf("invalid Mode %s, must be either 'grpc' or 'http'", c.Mode)
 	}
 }
