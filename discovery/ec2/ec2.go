@@ -284,7 +284,7 @@ func (d *Discovery) refresh(ctx context.Context) ([]*targetgroup.Group, error) {
 						continue
 					}
 					name := strutil.SanitizeLabelName(*t.Key)
-					labels[ec2LabelTag+model.LabelName(name)] = model.LabelValue(*t.Value)
+					labels[model.LabelName(ec2LabelTag + name)] = model.LabelValue(*t.Value)
 				}
 				tg.Targets = append(tg.Targets, labels)
 			}

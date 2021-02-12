@@ -1,37 +1,12 @@
-PROTOC_VERSION := 3.14.0
-GOLANG_PROTOBUF_VERSION := v1.4.3
-PROTOC_PGV_VERSION := v0.4.1
-
-GOPATH_DIR := $(shell go env GOPATH | awk -F: '{print $$1}')
 ENVOY_IMPORTS := ./generated/envoy/imports.go
-PROTO_DIR := ./api
 
-PROTOBUF_WKT_DIR := ./include
-
-protoc_search_go_packages := \
-	github.com/golang/protobuf@$(GOLANG_PROTOBUF_VERSION) \
-	github.com/envoyproxy/protoc-gen-validate@$(PROTOC_PGV_VERSION) \
-
-protoc_search_go_paths := $(foreach go_package,$(protoc_search_go_packages),--proto_path=$(GOPATH_DIR)/pkg/mod/$(go_package))
-
-# Protobuf-specifc configuration
-PROTOC_GO := protoc \
-	--proto_path=./include \
-	--proto_path=. \
-	$(protoc_search_go_paths) \
-	--go_opt=paths=source_relative \
-	--go_out=plugins=grpc:.
+include api/Makefile
 
 .PHONY: clean
-clean: clean/proto
-
-.PHONY: clean/proto
-clean/proto: ## Dev: Remove auto-generated Protobuf files
-	find $(PROTO_DIR) -name '*.pb.go' -delete
-	find $(PROTO_DIR) -name '*.pb.validate.go' -delete
+clean: api/clean
 
 .PHONY: generate
-generate: clean/proto protoc/api/v1alpha1
+generate: api/clean/proto api/generate
 
 .PHONY: generate/envoy-imports
 generate/envoy-imports:
@@ -43,17 +18,6 @@ generate/envoy-imports:
 	echo ')' >> ${ENVOY_IMPORTS}
 
 .PHONY: install
-install: install/protoc-gen-go install/protoc-gen-validate
+install: api/install/protoc-gen-go api/install/protoc-gen-validate
 
-.PHONY: install/protoc-gen-go
-install/protoc-gen-go: ## Bootstrap: Install Protoc Go Plugin (protobuf Go generator)
-	go get github.com/golang/protobuf/protoc-gen-go@$(GOLANG_PROTOBUF_VERSION)
-
-.PHONY: install/protoc-gen-validate
-install/protoc-gen-validate: ## Bootstrap: Install Protoc Gen Validate Plugin (protobuf validation code generator)
-	go get github.com/envoyproxy/protoc-gen-validate@$(PROTOC_PGV_VERSION)
-
-.PHONY: protoc/api/v1alpha1
-protoc/api/v1alpha1:
-	$(PROTOC_GO) api/v1alpha1/*.proto
 

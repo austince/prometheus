@@ -5,14 +5,9 @@ import (
 	"fmt"
 	"net/url"
 	"time"
-
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
-
-	_ "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	_ "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 )
 
 type DiscoveryMode string

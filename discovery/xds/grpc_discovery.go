@@ -14,7 +14,6 @@ type GrpcDiscovery struct {
 
 type GrpcClient struct {
 	conn *grpc.ClientConn
-
 }
 
 func newGrpcDiscovery(conf *SDConfig, logger log.Logger) (*GrpcDiscovery, error) {

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package prometheus.xds.v1alpha1;
+package prometheus.discovery.v1alpha1;
 
 option go_package = "github.com/prometheus/prometheus/discovery/xds/api/v1alpha1";
 
@@ -41,12 +41,14 @@ message MonitoringAssignment {
   // Describes a single target that needs to be monitored.
   message Target {
 
+    // TODO: might want to explicitly set address, instance, and metrics path
+
     // Labels associated with that particular target.
     //
     // E.g.,
     // `{
     //    "__address__" :      "192.168.0.1:8080",
-    //    "__metrics_path__" : "/metrics"]`,
+    //    "__metrics_path__" : "/metrics",
     //    "instance" :         "backend-01",
     //  }`.
     map<string, string> labels = 1;
