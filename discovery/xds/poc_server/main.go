@@ -17,17 +17,21 @@ import (
 
 func main() {
 	assignment := &v1alpha1.MonitoringAssignment{
-		Name: "test",
+		Name: "test-svc",
 		Targets: []*v1alpha1.MonitoringAssignment_Target{
 			{
+				Address: "127.0.0.1:6767",
+				Instance: "testerooni-0",
+				MetricsPath: "/metrics",
+
 				Labels: map[string]string{
-					"__address__":      "127.0.0.1:6767",
-					"__instance__":     "testerooni",
-					"__metrics_path__": "/metrics",
+					"commit_hash": "620506a88",
 				},
 			},
 		},
-		Labels: map[string]string{},
+		Labels: map[string]string{
+			"mesh": "default",
+		},
 	}
 
 	serializedAssignment, err := json.Marshal(assignment)

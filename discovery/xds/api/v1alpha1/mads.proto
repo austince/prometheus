@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package prometheus.discovery.v1alpha1;
+package prometheus.discovery.xds.v1alpha1;
 
 option go_package = "github.com/prometheus/prometheus/discovery/xds/api/v1alpha1";
 
@@ -32,26 +32,25 @@ service MonitoringAssignmentDiscoveryService {
 // Describes a group of targets that need to be monitored.
 message MonitoringAssignment {
 
-  // MDS resource name.
+  // MADS resource name.
   //
-  // E.g., `/meshes/default/services/backend` or
-  // `/meshes/default/dataplanes/backend-01`.
+  // E.g., `/meshes/default/services/backend`
   string name = 1 [ (validate.rules).string = {min_bytes : 1} ];
 
   // Describes a single target that needs to be monitored.
   message Target {
+    string address = 1 [ (validate.rules).string = {min_bytes : 1} ];
+    string metrics_path = 2;
+    string instance = 3 [ (validate.rules).string = {min_bytes : 1} ];
 
-    // TODO: might want to explicitly set address, instance, and metrics path
 
     // Labels associated with that particular target.
     //
     // E.g.,
     // `{
-    //    "__address__" :      "192.168.0.1:8080",
-    //    "__metrics_path__" : "/metrics",
-    //    "instance" :         "backend-01",
+    //    "commit_hash" : "620506a88",
     //  }`.
-    map<string, string> labels = 1;
+    map<string, string> labels = 4;
   }
 
   // List of targets that need to be monitored.
@@ -59,6 +58,6 @@ message MonitoringAssignment {
 
   // Labels associated with every target in that assignment.
   //
-  // E.g., `{"job" : "backend"}`.
+  // E.g., `{"mesh" : "default"}`.
   map<string, string> labels = 3;
 }

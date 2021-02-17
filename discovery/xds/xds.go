@@ -3,14 +3,27 @@ package xds
 import (
 	"errors"
 	"fmt"
-	"net/url"
-	"time"
 	"github.com/prometheus/common/config"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/discovery"
+	"net/url"
+	"time"
 )
 
 type DiscoveryMode string
+
+const (
+	// metaLabelPrefix is the meta prefix used for all meta labels.
+	// in this discovery.
+	metaLabelPrefix = model.MetaLabelPrefix + "xds_"
+
+	nameLabel = metaLabelPrefix + "name"
+	apiVersion = metaLabelPrefix + "api_version"
+	serverLabel = metaLabelPrefix + "server"
+	protocolVersion = metaLabelPrefix + "protocol_version"
+
+	source = "xds"
+)
 
 const (
 	GRPCMode = DiscoveryMode("grpc")

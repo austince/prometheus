@@ -6,7 +6,7 @@ include api/Makefile
 clean: api/clean
 
 .PHONY: generate
-generate: api/clean/proto api/generate
+generate: generate/envoy-imports api/clean/proto api/generate
 
 .PHONY: generate/envoy-imports
 generate/envoy-imports:
@@ -19,5 +19,3 @@ generate/envoy-imports:
 
 .PHONY: install
 install: api/install/protoc-gen-go api/install/protoc-gen-validate
-
-

@@ -29,6 +29,7 @@ type HTTPDiscovery struct {
 	*refresh.Discovery
 	log log.Logger
 	client *http.Client
+	conf *SDConfig
 }
 
 func newHttpDiscovery(conf *SDConfig, logger log.Logger) (*HTTPDiscovery, error) {
@@ -41,6 +42,7 @@ func newHttpDiscovery(conf *SDConfig, logger log.Logger) (*HTTPDiscovery, error)
 		client: &http.Client{Transport: rt},
 		server: conf.Server,
 		log: logger,
+		conf: conf,
 	}
 	d.Discovery = refresh.NewDiscovery(
 		logger,
@@ -51,7 +53,7 @@ func newHttpDiscovery(conf *SDConfig, logger log.Logger) (*HTTPDiscovery, error)
 	return d, nil
 }
 
-// TODO: implement/ use an actual xds client
+// TODO: implement/ use an actual xDS client
 func (d *HTTPDiscovery) fetchDiscovery(ctx context.Context) (*v3.DiscoveryResponse, error) {
 	url := fmt.Sprintf("%s%s", d.server, v3MonitoringDiscoveryPath)
 
@@ -122,36 +124,59 @@ func (d *HTTPDiscovery) refresh(ctx context.Context) ([]*targetgroup.Group, erro
 		assignments = append(assignments, assignment)
 	}
 
-	// convert assignments to target group
-	var targets []model.LabelSet
+	// convert assignments to target groups
+	groups := []*targetgroup.Group{}
 
 	for _, assignment := range assignments {
-		// TODO: more explicitly map labels, ensure meta prefix
+		var targets []model.LabelSet
 
-		for _, target := range assignment.Targets {
+		for _, assignmentTarget := range assignment.Targets {
 			targetLabels := model.LabelSet{}
 
-			// map labels for the entire assignment
-			for name, val := range assignment.Labels {
-				targetLabels[model.LabelName(name)] = lv(val)
+			// map labels for the single assignmentTarget
+			for name, val := range assignmentTarget.Labels {
+				targetLabels[prefixedLabel(name)] = lv(val)
 			}
-			// map labels for the single target
-			for name, val := range target.Labels {
-				targetLabels[model.LabelName(name)] = lv(val)
+
+			targetLabels[model.AddressLabel] = lv(assignmentTarget.Address)
+			targetLabels[model.InstanceLabel] = lv(assignmentTarget.Instance)
+
+			if len(assignmentTarget.MetricsPath) > 0 {
+				targetLabels[model.MetricsPathLabel] = lv(assignmentTarget.MetricsPath)
 			}
 
 			targets = append(targets, targetLabels)
 		}
+
+		groupLabels := model.LabelSet{}
+		for name, val := range assignment.Labels {
+			groupLabels[prefixedLabel(name)] = lv(val)
+		}
+
+		groupLabels[nameLabel] = lv(assignment.Name)
+		groupLabels[serverLabel] = lv(d.conf.Server)
+		groupLabels[apiVersion] = lv(string(d.conf.ApiVersion))
+		groupLabels[protocolVersion] = lv(string(d.conf.ProtocolVersion))
+
+		tg := &targetgroup.Group{
+			Source: source,
+			Targets: targets,
+			Labels: groupLabels,
+		}
+
+		groups = append(groups, tg)
 	}
 
-	tg := &targetgroup.Group{
-		Source: "xds",
-		Targets: targets,
-	}
 
-	return []*targetgroup.Group{tg}, nil
+
+	return groups, nil
 }
 
+func prefixedLabel(s string) model.LabelName {
+	return model.LabelName(metaLabelPrefix + s)
+}
+
+// lv is just a shorthand
 func lv(s string) model.LabelValue {
 	return model.LabelValue(s)
 }
