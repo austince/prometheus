@@ -6,7 +6,7 @@ include api/Makefile
 clean: api/clean
 
 .PHONY: generate
-generate: generate/envoy-imports api/clean/proto api/generate
+generate: clean generate/envoy-imports api/generate
 
 .PHONY: generate/envoy-imports
 generate/envoy-imports:
@@ -18,4 +18,12 @@ generate/envoy-imports:
 	echo ')' >> ${ENVOY_IMPORTS}
 
 .PHONY: install
-install: api/install/protoc-gen-go api/install/protoc-gen-validate
+install: api/install/protoc-gen-go api/install/protoc-gen-validate api/install/proto-deps
+
+run/discovery:
+	@cd poc_discovery \
+		&& go run ./main.go
+
+run/server:
+	@cd ./poc_server \
+		&& go run ./main.go

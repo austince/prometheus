@@ -16,11 +16,10 @@ const (
 	// metaLabelPrefix is the meta prefix used for all meta labels.
 	// in this discovery.
 	metaLabelPrefix = model.MetaLabelPrefix + "xds_"
-
-	nameLabel = metaLabelPrefix + "name"
-	apiVersion = metaLabelPrefix + "api_version"
-	serverLabel = metaLabelPrefix + "server"
-	protocolVersion = metaLabelPrefix + "protocol_version"
+	apiVersionLabel      = metaLabelPrefix + "api_version"
+	serverLabel          = metaLabelPrefix + "server"
+	protocolVersionLabel = metaLabelPrefix + "protocol_version"
+	modeLabel = metaLabelPrefix + "mode"
 
 	source = "xds"
 )
@@ -63,8 +62,8 @@ type SDConfig struct {
 	Server          string          `yaml:"server,omitempty"`
 	Http            *HTTPConfig     `yaml:"http,omitempty"`
 	Grpc            *GRPCConfig     `yaml:"grpc,omitempty"`
-	ProtocolVersion ProtocolVersion `yaml:"protocolVersion"`
-	ApiVersion      ApiVersion      `yaml:"apiVersion"`
+	ProtocolVersion ProtocolVersion `yaml:"protocolVersionLabel"`
+	ApiVersion      ApiVersion      `yaml:"apiVersionLabel"`
 }
 
 func validateProtocolVersion(version ProtocolVersion) error {
@@ -81,7 +80,7 @@ func validateApiVersion(version ApiVersion) error {
 	case V1Alpha1:
 		return nil
 	default:
-		return fmt.Errorf("unsupported apiVersion %s. Only v1alpha1 is supported", version)
+		return fmt.Errorf("unsupported apiVersionLabel %s. Only v1alpha1 is supported", version)
 	}
 }
 

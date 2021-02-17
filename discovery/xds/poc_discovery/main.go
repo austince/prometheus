@@ -14,7 +14,7 @@ type logger struct {
 }
 
 func (l *logger) Log(keyvals ...interface{}) error {
-	fmt.Println(keyvals)
+	fmt.Println(keyvals...)
 	return nil
 }
 
@@ -23,7 +23,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 
 	conf := &xds.SDConfig{
 		Mode: xds.HTTPMode,
@@ -53,9 +52,14 @@ func main() {
 
 	for groups := range c {
 		fmt.Printf("Got groups %v\n", groups)
-		for g := range groups {
-			fmt.Printf("with group %v\n", g)
+		for _, g := range groups {
+			fmt.Println()
+			fmt.Printf("group %v\n", g)
+			fmt.Printf("with labels %v\n", g.Labels)
+			fmt.Printf("with targets %v\n", g.Targets)
+			fmt.Printf("with source %v\n", g.Source)
 		}
-
+		fmt.Println()
 	}
+	fmt.Println()
 }

@@ -22,7 +22,7 @@ import (
 )
 
 var userAgent = fmt.Sprintf("Prometheus/%s", version.Version)
-const v3MonitoringDiscoveryPath = "/v3/discovery:monitoring"
+const v3MonitoringDiscoveryPath = "/v3/discovery:monitoringassignment"
 
 type HTTPDiscovery struct {
 	server string
@@ -58,12 +58,12 @@ func (d *HTTPDiscovery) fetchDiscovery(ctx context.Context) (*v3.DiscoveryRespon
 	url := fmt.Sprintf("%s%s", d.server, v3MonitoringDiscoveryPath)
 
 	discoveryReq := &v3.DiscoveryRequest{
-		VersionInfo: "v1beta1", // probably not correct
-		Node: nil, // TODO
-		ResourceNames: []string{},
+		VersionInfo: "", // TODO: increment
+		Node: nil, // TODO: provide some type of node information: https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/core/v3/base.proto#envoy-v3-api-msg-config-core-v3-node
+		ResourceNames: []string{}, // all resources, TODO: add this to discovery configuration?
 		TypeUrl: api.MonitoringAssignmentTypeUrl,
 		ResponseNonce: "",
-		ErrorDetail: nil,
+		ErrorDetail: nil, // TODO: track errors converting to targets
 	}
 
 	reqBody, err := json.Marshal(discoveryReq)
@@ -153,13 +153,13 @@ func (d *HTTPDiscovery) refresh(ctx context.Context) ([]*targetgroup.Group, erro
 			groupLabels[prefixedLabel(name)] = lv(val)
 		}
 
-		groupLabels[nameLabel] = lv(assignment.Name)
 		groupLabels[serverLabel] = lv(d.conf.Server)
-		groupLabels[apiVersion] = lv(string(d.conf.ApiVersion))
-		groupLabels[protocolVersion] = lv(string(d.conf.ProtocolVersion))
+		groupLabels[apiVersionLabel] = lv(string(d.conf.ApiVersion))
+		groupLabels[protocolVersionLabel] = lv(string(d.conf.ProtocolVersion))
+		groupLabels[modeLabel] = lv(string(d.conf.Mode))
 
 		tg := &targetgroup.Group{
-			Source: source,
+			Source: assignment.Source,
 			Targets: targets,
 			Labels: groupLabels,
 		}

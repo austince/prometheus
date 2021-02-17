@@ -1,3 +1,4 @@
+// NOT IMPLEMENTED
 package xds
 
 import (
@@ -26,5 +27,4 @@ func newGrpcDiscovery(conf *SDConfig, logger log.Logger) (*GrpcDiscovery, error)
 
 func (d *GrpcDiscovery) Run(ctx context.Context, up chan<- []*targetgroup.Group) {
 	d.log.Log("msg", "Running GRPC Discovery")
-	// Must sync the latest groups, which should be buffered in memory?
 }

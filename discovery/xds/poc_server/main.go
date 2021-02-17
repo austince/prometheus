@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	v3 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	"github.com/golang/protobuf/ptypes/any"
@@ -17,12 +18,20 @@ import (
 
 func main() {
 	assignment := &v1alpha1.MonitoringAssignment{
-		Name: "test-svc",
+		Source: "test-svc",
 		Targets: []*v1alpha1.MonitoringAssignment_Target{
 			{
 				Address: "127.0.0.1:6767",
 				Instance: "testerooni-0",
 				MetricsPath: "/metrics",
+
+				Labels: map[string]string{
+					"commit_hash": "620506a88",
+				},
+			},
+			{
+				Address: "127.0.0.1:6767",
+				Instance: "testerooni-1",
 
 				Labels: map[string]string{
 					"commit_hash": "620506a88",
@@ -47,10 +56,10 @@ func main() {
 	}
 
 	discoveryRes := v3.DiscoveryResponse{
-		VersionInfo: "v1alpha1", // might not be correct
+		VersionInfo: "1",
 		Resources:   resources,
-		Canary:      false,
-		TypeUrl:     api.MonitoringAssignmentTypeUrl, // might not be correct, should be server type?
+		ControlPlane: nil,
+		TypeUrl:     api.MonitoringAssignmentTypeUrl,
 		Nonce:       "",
 	}
 
@@ -59,19 +68,21 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Sample assignment: %v\n", assignment)
+	fmt.Printf("Sample assignment: \n{%v}\n", assignment)
 
 	// mock assignments
-	http.HandleFunc("/v3/discovery:monitoring", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Print("Handling discovery\n")
+	http.HandleFunc("/v3/discovery:monitoringassignment", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%v: Handling discovery\n", time.Now().Format(time.Kitchen))
 
-		//decoder := json.NewDecoder(r.Body)
-		//var req v3.DiscoveryRequest
-		//if err := decoder.Decode(&req); err != nil {
-		//	w.WriteHeader(400)
-		//	fmt.Printf("Error decoding body %v\n", err)
-		//	return
-		//}
+		decoder := json.NewDecoder(r.Body)
+		var req v3.DiscoveryRequest
+		if err := decoder.Decode(&req); err != nil {
+			w.WriteHeader(400)
+			w.Write([]byte(fmt.Sprintf(`{"error": "Cannot decode body", message: "%s"}`, err.Error())))
+			fmt.Printf("Error decoding body %v\n", err)
+			return
+		}
+		fmt.Printf("Discovery request: %v\n", req)
 
 		w.WriteHeader(200)
 		if _, err = w.Write(serializedDiscoveryRes); err != nil {
@@ -81,7 +92,12 @@ func main() {
 
 	// mock metrics
 	http.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Print("Handling metrics\n")
+		fmt.Println("Handling metrics on /metrics path")
+		// TODO
+	})
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("Handling metrics on root path")
+		// TODO
 	})
 
 	fmt.Printf("POC xDS server listening on port 6767\n")

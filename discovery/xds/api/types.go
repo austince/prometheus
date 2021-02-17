@@ -1,5 +1,5 @@
 package api
 
 const (
-	MonitoringAssignmentTypeUrl = "type.googleapis.com/prometheus.discovery.xds.api.v1alpha1.MonitoringAssignment"
+	MonitoringAssignmentTypeUrl = "type.googleapis.com/prometheus.discovery.xds.v1alpha1.MonitoringAssignment"
 )
