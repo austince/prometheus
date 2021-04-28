@@ -14,9 +14,7 @@
 syntax = "proto3";
 package prometheus;
 
-option go_package = "prompb";
-
-import "gogoproto/gogo.proto";
+option go_package = "github.com/prometheus/prometheus/prompb";
 
 message MetricMetadata {
   enum MetricType {

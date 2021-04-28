@@ -65,6 +65,7 @@ require (
 	golang.org/x/time v0.0.0-20210611083556-38a9dc6acbc6
 	golang.org/x/tools v0.1.3
 	google.golang.org/api v0.48.0
+	google.golang.org/protobuf v1.26.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7
 	gopkg.in/yaml.v2 v2.4.0

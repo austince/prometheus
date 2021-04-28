@@ -14,7 +14,7 @@
 syntax = "proto3";
 package prometheus;
 
-option go_package = "prompb";
+option go_package = "github.com/prometheus/prometheus/prompb";
 
 import "types.proto";
 import "gogoproto/gogo.proto";

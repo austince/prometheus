@@ -225,8 +225,8 @@ func concatLabels(labels map[string]string) string {
 	return strings.Join(pairs, separator)
 }
 
-func tagsToLabelPairs(name string, tags map[string]string) []prompb.Label {
-	pairs := make([]prompb.Label, 0, len(tags))
+func tagsToLabelPairs(name string, tags map[string]string) []*prompb.Label {
+	pairs := make([]*prompb.Label, 0, len(tags))
 	for k, v := range tags {
 		if v == "" {
 			// If we select metrics with different sets of labels names,
@@ -237,20 +237,20 @@ func tagsToLabelPairs(name string, tags map[string]string) []prompb.Label {
 			// to make the result correct.
 			continue
 		}
-		pairs = append(pairs, prompb.Label{
+		pairs = append(pairs, &prompb.Label{
 			Name:  k,
 			Value: v,
 		})
 	}
-	pairs = append(pairs, prompb.Label{
+	pairs = append(pairs, &prompb.Label{
 		Name:  model.MetricNameLabel,
 		Value: name,
 	})
 	return pairs
 }
 
-func valuesToSamples(values [][]interface{}) ([]prompb.Sample, error) {
-	samples := make([]prompb.Sample, 0, len(values))
+func valuesToSamples(values [][]interface{}) ([]*prompb.Sample, error) {
+	samples := make([]*prompb.Sample, 0, len(values))
 	for _, v := range values {
 		if len(v) != 2 {
 			return nil, errors.Errorf("bad sample tuple length, expected [<timestamp>, <value>], got %v", v)
@@ -276,7 +276,7 @@ func valuesToSamples(values [][]interface{}) ([]prompb.Sample, error) {
 			return nil, errors.Wrap(err, "unable to convert sample value to float64")
 		}
 
-		samples = append(samples, prompb.Sample{
+		samples = append(samples, &prompb.Sample{
 			Timestamp: timestamp,
 			Value:     value,
 		})
@@ -286,8 +286,8 @@ func valuesToSamples(values [][]interface{}) ([]prompb.Sample, error) {
 
 // mergeSamples merges two lists of sample pairs and removes duplicate
 // timestamps. It assumes that both lists are sorted by timestamp.
-func mergeSamples(a, b []prompb.Sample) []prompb.Sample {
-	result := make([]prompb.Sample, 0, len(a)+len(b))
+func mergeSamples(a, b []*prompb.Sample) []*prompb.Sample {
+	result := make([]*prompb.Sample, 0, len(a)+len(b))
 	i, j := 0, 0
 	for i < len(a) && j < len(b) {
 		if a[i].Timestamp < b[j].Timestamp {

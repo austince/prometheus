@@ -116,7 +116,7 @@ func ToQueryResult(ss storage.SeriesSet, sampleLimit int) (*prompb.QueryResult, 
 	for ss.Next() {
 		series := ss.At()
 		iter := series.Iterator()
-		samples := []prompb.Sample{}
+		samples := []*prompb.Sample{}
 
 		for iter.Next() {
 			numSamples++
@@ -127,7 +127,7 @@ func ToQueryResult(ss storage.SeriesSet, sampleLimit int) (*prompb.QueryResult, 
 				}
 			}
 			ts, val := iter.At()
-			samples = append(samples, prompb.Sample{
+			samples = append(samples, &prompb.Sample{
 				Timestamp: ts,
 				Value:     val,
 			})
@@ -189,12 +189,12 @@ func StreamChunkedReadResponses(
 	stream io.Writer,
 	queryIndex int64,
 	ss storage.ChunkSeriesSet,
-	sortedExternalLabels []prompb.Label,
+	sortedExternalLabels []*prompb.Label,
 	maxBytesInFrame int,
 ) (storage.Warnings, error) {
 	var (
-		chks []prompb.Chunk
-		lbls []prompb.Label
+		chks []*prompb.Chunk
+		lbls []*prompb.Label
 	)
 
 	for ss.Next() {
@@ -218,7 +218,7 @@ func StreamChunkedReadResponses(
 			}
 
 			// Cut the chunk.
-			chks = append(chks, prompb.Chunk{
+			chks = append(chks, &prompb.Chunk{
 				MinTimeMs: chk.MinTime,
 				MaxTimeMs: chk.MaxTime,
 				Type:      prompb.Chunk_Encoding(chk.Chunk.Encoding()),
@@ -256,8 +256,8 @@ func StreamChunkedReadResponses(
 
 // MergeLabels merges two sets of sorted proto labels, preferring those in
 // primary to those in secondary when there is an overlap.
-func MergeLabels(primary, secondary []prompb.Label) []prompb.Label {
-	result := make([]prompb.Label, 0, len(primary)+len(secondary))
+func MergeLabels(primary, secondary []*prompb.Label) []*prompb.Label {
+	result := make([]*prompb.Label, 0, len(primary)+len(secondary))
 	i, j := 0, 0
 	for i < len(primary) && j < len(secondary) {
 		if primary[i].Name < secondary[j].Name {
@@ -330,7 +330,7 @@ func (c *concreteSeriesSet) Warnings() storage.Warnings { return nil }
 // concreteSeries implements storage.Series.
 type concreteSeries struct {
 	labels  labels.Labels
-	samples []prompb.Sample
+	samples []*prompb.Sample
 }
 
 func (c *concreteSeries) Labels() labels.Labels {
@@ -459,7 +459,7 @@ func LabelProtosToMetric(labelPairs []*prompb.Label) model.Metric {
 	return metric
 }
 
-func labelProtosToLabels(labelPairs []prompb.Label) labels.Labels {
+func labelProtosToLabels(labelPairs []*prompb.Label) labels.Labels {
 	result := make(labels.Labels, 0, len(labelPairs))
 	for _, l := range labelPairs {
 		result = append(result, labels.Label{
@@ -473,13 +473,13 @@ func labelProtosToLabels(labelPairs []prompb.Label) labels.Labels {
 
 // labelsToLabelsProto transforms labels into prompb labels. The buffer slice
 // will be used to avoid allocations if it is big enough to store the labels.
-func labelsToLabelsProto(labels labels.Labels, buf []prompb.Label) []prompb.Label {
+func labelsToLabelsProto(labels labels.Labels, buf []*prompb.Label) []*prompb.Label {
 	result := buf[:0]
 	if cap(buf) < len(labels) {
-		result = make([]prompb.Label, 0, len(labels))
+		result = make([]*prompb.Label, 0, len(labels))
 	}
 	for _, l := range labels {
-		result = append(result, prompb.Label{
+		result = append(result, &prompb.Label{
 			Name:  l.Name,
 			Value: l.Value,
 		})
