@@ -50,8 +50,6 @@ done
 
 PROM_ROOT="${PWD}"
 PROM_PATH="${PROM_ROOT}/prompb"
-#GOGOPROTO_ROOT="$(GO111MODULE=on go list -mod=readonly -f '{{ .Dir }}' -m github.com/gogo/protobuf)"
-#GOGOPROTO_PATH="${GOGOPROTO_ROOT}:${GOGOPROTO_ROOT}/protobuf"
 GRPC_GATEWAY_ROOT="$(GO111MODULE=on go list -mod=readonly -f '{{ .Dir }}' -m github.com/grpc-ecosystem/grpc-gateway)"
 
 DIRS="prompb"
@@ -69,9 +67,6 @@ for dir in ${DIRS}; do
             -I="${GRPC_GATEWAY_ROOT}/third_party/googleapis" \
             ./*.proto
 
-#		sed -i.bak -E 's/import _ \"google\/protobuf\"//g' ./*.pb.go
-#		sed -i.bak -E 's/\t_ \"google\/protobuf\"//g' ./*.pb.go
-		rm -f ./*.bak
 		goimports -w ./*.go
 	popd
 done
