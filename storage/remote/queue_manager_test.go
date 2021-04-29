@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
 	"github.com/prometheus/client_golang/prometheus"
 	client_testutil "github.com/prometheus/client_golang/prometheus/testutil"
@@ -36,6 +35,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -517,11 +517,11 @@ func getSeriesNameFromRef(r record.RefSeries) string {
 }
 
 type TestWriteClient struct {
-	receivedSamples   map[string][]prompb.Sample
-	expectedSamples   map[string][]prompb.Sample
+	receivedSamples   map[string][]*prompb.Sample
+	expectedSamples   map[string][]*prompb.Sample
 	receivedExemplars map[string][]prompb.Exemplar
 	expectedExemplars map[string][]prompb.Exemplar
-	receivedMetadata  map[string][]prompb.MetricMetadata
+	receivedMetadata  map[string][]*prompb.MetricMetadata
 	withWaitGroup     bool
 	wg                sync.WaitGroup
 	mtx               sync.Mutex
@@ -531,9 +531,9 @@ type TestWriteClient struct {
 func NewTestWriteClient() *TestWriteClient {
 	return &TestWriteClient{
 		withWaitGroup:    true,
-		receivedSamples:  map[string][]prompb.Sample{},
-		expectedSamples:  map[string][]prompb.Sample{},
-		receivedMetadata: map[string][]prompb.MetricMetadata{},
+		receivedSamples:  map[string][]*prompb.Sample{},
+		expectedSamples:  map[string][]*prompb.Sample{},
+		receivedMetadata: map[string][]*prompb.MetricMetadata{},
 	}
 }
 
@@ -544,12 +544,12 @@ func (c *TestWriteClient) expectSamples(ss []record.RefSample, series []record.R
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
-	c.expectedSamples = map[string][]prompb.Sample{}
-	c.receivedSamples = map[string][]prompb.Sample{}
+	c.expectedSamples = map[string][]*prompb.Sample{}
+	c.receivedSamples = map[string][]*prompb.Sample{}
 
 	for _, s := range ss {
 		seriesName := getSeriesNameFromRef(series[s.Ref])
-		c.expectedSamples[seriesName] = append(c.expectedSamples[seriesName], prompb.Sample{
+		c.expectedSamples[seriesName] = append(c.expectedSamples[seriesName], &prompb.Sample{
 			Timestamp: s.T,
 			Value:     s.V,
 		})

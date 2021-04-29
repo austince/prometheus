@@ -186,12 +186,12 @@ func TestSeriesSetFilter(t *testing.T) {
 			toRemove: labels.Labels{{Name: "foo", Value: "bar"}},
 			in: &prompb.QueryResult{
 				Timeseries: []*prompb.TimeSeries{
-					{Labels: labelsToLabelsProto(labels.FromStrings("foo", "bar", "a", "b"), nil), Samples: []prompb.Sample{}},
+					{Labels: labelsToLabelsProto(labels.FromStrings("foo", "bar", "a", "b"), nil), Samples: []*prompb.Sample{}},
 				},
 			},
 			expected: &prompb.QueryResult{
 				Timeseries: []*prompb.TimeSeries{
-					{Labels: labelsToLabelsProto(labels.FromStrings("a", "b"), nil), Samples: []prompb.Sample{}},
+					{Labels: labelsToLabelsProto(labels.FromStrings("a", "b"), nil), Samples: []*prompb.Sample{}},
 				},
 			},
 		},
@@ -252,9 +252,9 @@ func TestSampleAndChunkQueryableClient(t *testing.T) {
 	m := &mockedRemoteClient{
 		// Samples does not matter for below tests.
 		store: []*prompb.TimeSeries{
-			{Labels: []prompb.Label{{Name: "a", Value: "b"}}},
-			{Labels: []prompb.Label{{Name: "a", Value: "b3"}, {Name: "region", Value: "us"}}},
-			{Labels: []prompb.Label{{Name: "a", Value: "b2"}, {Name: "region", Value: "europe"}}},
+			{Labels: []*prompb.Label{{Name: "a", Value: "b"}}},
+			{Labels: []*prompb.Label{{Name: "a", Value: "b3"}, {Name: "region", Value: "us"}}},
+			{Labels: []*prompb.Label{{Name: "a", Value: "b2"}, {Name: "region", Value: "europe"}}},
 		},
 	}
 

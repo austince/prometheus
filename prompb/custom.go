@@ -13,5 +13,60 @@
 
 package prompb
 
+import (
+	mathbits "math/bits"
+)
+
 func (m *Sample) T() int64   { return m.Timestamp }
 func (m *Sample) V() float64 { return m.Value }
+
+// TODO: these should be generated
+
+func (m *Label) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if m.unknownFields != nil {
+		n += len(m.unknownFields)
+	}
+	return n
+}
+
+func (m *Chunk) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.MinTimeMs != 0 {
+		n += 1 + sovTypes(uint64(m.MinTimeMs))
+	}
+	if m.MaxTimeMs != 0 {
+		n += 1 + sovTypes(uint64(m.MaxTimeMs))
+	}
+	if m.Type != 0 {
+		n += 1 + sovTypes(uint64(m.Type))
+	}
+	l = len(m.Data)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if m.unknownFields != nil {
+		n += len(m.unknownFields)
+	}
+	return n
+}
+
+func sovTypes(x uint64) (n int) {
+	return (mathbits.Len64(x|1) + 6) / 7
+}

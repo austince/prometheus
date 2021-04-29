@@ -22,11 +22,11 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"go.uber.org/atomic"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
@@ -433,9 +433,9 @@ func NewQueueManager(
 
 // AppendMetadata sends metadata the remote storage. Metadata is sent all at once and is not parallelized.
 func (t *QueueManager) AppendMetadata(ctx context.Context, metadata []scrape.MetricMetadata) {
-	mm := make([]prompb.MetricMetadata, 0, len(metadata))
+	mm := make([]*prompb.MetricMetadata, 0, len(metadata))
 	for _, entry := range metadata {
-		mm = append(mm, prompb.MetricMetadata{
+		mm = append(mm, &prompb.MetricMetadata{
 			MetricFamilyName: entry.Metric,
 			Help:             entry.Help,
 			Type:             metricTypeToMetricTypeProto(entry.Type),
@@ -451,7 +451,7 @@ func (t *QueueManager) AppendMetadata(ctx context.Context, metadata []scrape.Met
 	}
 }
 
-func (t *QueueManager) sendMetadataWithBackoff(ctx context.Context, metadata []prompb.MetricMetadata) error {
+func (t *QueueManager) sendMetadataWithBackoff(ctx context.Context, metadata []*prompb.MetricMetadata) error {
 	// Build the WriteRequest with no samples.
 	req, _, err := buildWriteRequest(nil, metadata, nil)
 	if err != nil {
@@ -1121,7 +1121,7 @@ func (s *shards) runShard(ctx context.Context, shardID int, queue chan interface
 	}
 }
 
-func (s *shards) sendSamples(ctx context.Context, samples []prompb.TimeSeries, sampleCount int, exemplarCount int, buf *[]byte) {
+func (s *shards) sendSamples(ctx context.Context, samples []*prompb.TimeSeries, sampleCount int, exemplarCount int, buf *[]byte) {
 	begin := time.Now()
 	err := s.sendSamplesWithBackoff(ctx, samples, sampleCount, exemplarCount, buf)
 	if err != nil {
@@ -1138,7 +1138,7 @@ func (s *shards) sendSamples(ctx context.Context, samples []prompb.TimeSeries, s
 }
 
 // sendSamples to the remote storage with backoff for recoverable errors.
-func (s *shards) sendSamplesWithBackoff(ctx context.Context, samples []prompb.TimeSeries, sampleCount int, exemplarCount int, buf *[]byte) error {
+func (s *shards) sendSamplesWithBackoff(ctx context.Context, samples []*prompb.TimeSeries, sampleCount int, exemplarCount int, buf *[]byte) error {
 	// Build the WriteRequest with no metadata.
 	req, highest, err := buildWriteRequest(samples, nil, *buf)
 	if err != nil {
@@ -1247,7 +1247,7 @@ func sendWriteRequestWithBackoff(ctx context.Context, cfg config.QueueConfig, l 
 	}
 }
 
-func buildWriteRequest(samples []prompb.TimeSeries, metadata []prompb.MetricMetadata, buf []byte) ([]byte, int64, error) {
+func buildWriteRequest(samples []*prompb.TimeSeries, metadata []*prompb.MetricMetadata, buf []byte) ([]byte, int64, error) {
 	var highest int64
 	for _, ts := range samples {
 		// At the moment we only ever append a TimeSeries with a single sample or exemplar in it.
@@ -1278,10 +1278,10 @@ func buildWriteRequest(samples []prompb.TimeSeries, metadata []prompb.MetricMeta
 	return compressed, highest, nil
 }
 
-func allocateSampleBuffer(capacity int) [][]prompb.Sample {
-	buf := make([][]prompb.Sample, capacity)
+func allocateSampleBuffer(capacity int) [][]*prompb.Sample {
+	buf := make([][]*prompb.Sample, capacity)
 	for i := range buf {
-		buf[i] = []prompb.Sample{{}}
+		buf[i] = []*prompb.Sample{{}}
 	}
 	return buf
 }

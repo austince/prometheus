@@ -57,9 +57,9 @@ func TestRemoteWriteHandler(t *testing.T) {
 }
 
 func TestOutOfOrder(t *testing.T) {
-	buf, _, err := buildWriteRequest([]prompb.TimeSeries{{
-		Labels:  []prompb.Label{{Name: "__name__", Value: "test_metric"}},
-		Samples: []prompb.Sample{{Value: 1, Timestamp: 0}},
+	buf, _, err := buildWriteRequest([]*prompb.TimeSeries{{
+		Labels:  []*prompb.Label{{Name: "__name__", Value: "test_metric"}},
+		Samples: []*prompb.Sample{{Value: 1, Timestamp: 0}},
 	}}, nil, nil)
 	require.NoError(t, err)
 

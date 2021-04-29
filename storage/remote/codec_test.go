@@ -16,6 +16,8 @@ package remote
 import (
 	"bytes"
 	"fmt"
+	"github.com/gogo/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,26 +29,26 @@ import (
 )
 
 var writeRequestFixture = &prompb.WriteRequest{
-	Timeseries: []prompb.TimeSeries{
+	Timeseries: []*prompb.TimeSeries{
 		{
-			Labels: []prompb.Label{
+			Labels: []*prompb.Label{
 				{Name: "__name__", Value: "test_metric1"},
 				{Name: "b", Value: "c"},
 				{Name: "baz", Value: "qux"},
 				{Name: "d", Value: "e"},
 				{Name: "foo", Value: "bar"},
 			},
-			Samples: []prompb.Sample{{Value: 1, Timestamp: 0}},
+			Samples: []*prompb.Sample{{Value: 1, Timestamp: 0}},
 		},
 		{
-			Labels: []prompb.Label{
+			Labels: []*prompb.Label{
 				{Name: "__name__", Value: "test_metric1"},
 				{Name: "b", Value: "c"},
 				{Name: "baz", Value: "qux"},
 				{Name: "d", Value: "e"},
 				{Name: "foo", Value: "bar"},
 			},
-			Samples: []prompb.Sample{{Value: 2, Timestamp: 1}},
+			Samples: []*prompb.Sample{{Value: 2, Timestamp: 1}},
 		},
 	},
 }
@@ -154,11 +156,11 @@ func TestValidateLabelsAndMetricName(t *testing.T) {
 func TestConcreteSeriesSet(t *testing.T) {
 	series1 := &concreteSeries{
 		labels:  labels.FromStrings("foo", "bar"),
-		samples: []prompb.Sample{{Value: 1, Timestamp: 2}},
+		samples: []*prompb.Sample{{Value: 1, Timestamp: 2}},
 	}
 	series2 := &concreteSeries{
 		labels:  labels.FromStrings("foo", "baz"),
-		samples: []prompb.Sample{{Value: 3, Timestamp: 4}},
+		samples: []*prompb.Sample{{Value: 3, Timestamp: 4}},
 	}
 	c := &concreteSeriesSet{
 		series: []storage.Series{series1, series2},
@@ -191,11 +193,11 @@ func TestConcreteSeriesClonesLabels(t *testing.T) {
 
 func TestFromQueryResultWithDuplicates(t *testing.T) {
 	ts1 := prompb.TimeSeries{
-		Labels: []prompb.Label{
+		Labels: []*prompb.Label{
 			{Name: "foo", Value: "bar"},
 			{Name: "foo", Value: "def"},
 		},
-		Samples: []prompb.Sample{
+		Samples: []*prompb.Sample{
 			{Value: 0.0, Timestamp: 0},
 		},
 	}
@@ -241,17 +243,17 @@ func TestNegotiateResponseType(t *testing.T) {
 
 func TestMergeLabels(t *testing.T) {
 	for _, tc := range []struct {
-		primary, secondary, expected []prompb.Label
+		primary, secondary, expected []*prompb.Label
 	}{
 		{
-			primary:   []prompb.Label{{Name: "aaa", Value: "foo"}, {Name: "bbb", Value: "foo"}, {Name: "ddd", Value: "foo"}},
-			secondary: []prompb.Label{{Name: "bbb", Value: "bar"}, {Name: "ccc", Value: "bar"}},
-			expected:  []prompb.Label{{Name: "aaa", Value: "foo"}, {Name: "bbb", Value: "foo"}, {Name: "ccc", Value: "bar"}, {Name: "ddd", Value: "foo"}},
+			primary:   []*prompb.Label{{Name: "aaa", Value: "foo"}, {Name: "bbb", Value: "foo"}, {Name: "ddd", Value: "foo"}},
+			secondary: []*prompb.Label{{Name: "bbb", Value: "bar"}, {Name: "ccc", Value: "bar"}},
+			expected:  []*prompb.Label{{Name: "aaa", Value: "foo"}, {Name: "bbb", Value: "foo"}, {Name: "ccc", Value: "bar"}, {Name: "ddd", Value: "foo"}},
 		},
 		{
-			primary:   []prompb.Label{{Name: "bbb", Value: "bar"}, {Name: "ccc", Value: "bar"}},
-			secondary: []prompb.Label{{Name: "aaa", Value: "foo"}, {Name: "bbb", Value: "foo"}, {Name: "ddd", Value: "foo"}},
-			expected:  []prompb.Label{{Name: "aaa", Value: "foo"}, {Name: "bbb", Value: "bar"}, {Name: "ccc", Value: "bar"}, {Name: "ddd", Value: "foo"}},
+			primary:   []*prompb.Label{{Name: "bbb", Value: "bar"}, {Name: "ccc", Value: "bar"}},
+			secondary: []*prompb.Label{{Name: "aaa", Value: "foo"}, {Name: "bbb", Value: "foo"}, {Name: "ddd", Value: "foo"}},
+			expected:  []*prompb.Label{{Name: "aaa", Value: "foo"}, {Name: "bbb", Value: "bar"}, {Name: "ccc", Value: "bar"}, {Name: "ddd", Value: "foo"}},
 		},
 	} {
 		require.Equal(t, tc.expected, MergeLabels(tc.primary, tc.secondary))
@@ -295,5 +297,9 @@ func TestDecodeWriteRequest(t *testing.T) {
 
 	actual, err := DecodeWriteRequest(bytes.NewReader(buf))
 	require.NoError(t, err)
-	require.Equal(t, writeRequestFixture, actual)
+
+	comparer := cmp.Comparer(proto.Equal)
+
+	diff := cmp.Diff(writeRequestFixture, actual, comparer)
+	require.Empty(t, diff, "diff")
 }
