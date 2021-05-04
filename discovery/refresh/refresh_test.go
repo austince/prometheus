@@ -15,7 +15,10 @@ package refresh
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"testing"
 	"time"
 
@@ -85,4 +88,123 @@ func TestRefresh(t *testing.T) {
 		t.Fatal("Unexpected target group")
 	case <-tick.C:
 	}
+}
+
+func TestIncFailures(t *testing.T) {
+	resetMetrics()
+	tg1 := []*targetgroup.Group{
+		{
+			Source: "tg",
+			Targets: []model.LabelSet{
+				{
+					model.LabelName("t1"): model.LabelValue("v1"),
+				},
+			},
+			Labels: model.LabelSet{
+				model.LabelName("l1"): model.LabelValue("lv1"),
+			},
+		},
+	}
+	tg2 := []*targetgroup.Group{
+		{
+			Source: "tg",
+		},
+	}
+
+	var i int
+	refresh := func(ctx context.Context) ([]*targetgroup.Group, error) {
+		i++
+		switch i {
+		case 1:
+			return tg1, nil
+		case 2:
+			return nil, errors.New("some error")
+		}
+		return tg2, nil
+	}
+	interval := time.Millisecond
+	d := NewDiscovery(nil, "test", interval, refresh)
+
+	ch := make(chan []*targetgroup.Group)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go d.Run(ctx, ch)
+
+	tg := <-ch
+	require.Equal(t, tg1, tg)
+
+	tg = <-ch
+	require.Equal(t, tg2, tg)
+
+	failureCount, err := getCounterValue(d.failures)
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, float64(1), failureCount)
+}
+
+func TestSkipRefresh(t *testing.T) {
+	resetMetrics()
+	tg1 := []*targetgroup.Group{
+		{
+			Source: "tg",
+			Targets: []model.LabelSet{
+				{
+					model.LabelName("t1"): model.LabelValue("v1"),
+				},
+			},
+			Labels: model.LabelSet{
+				model.LabelName("l1"): model.LabelValue("lv1"),
+			},
+		},
+	}
+	tg2 := []*targetgroup.Group{
+		{
+			Source: "tg",
+		},
+	}
+
+	var i int
+	refresh := func(ctx context.Context) ([]*targetgroup.Group, error) {
+		i++
+		switch i {
+		case 1:
+			return tg1, nil
+		case 2:
+			return nil, fmt.Errorf("up to date: %w", ErrSkipUpdate)
+		}
+		return tg2, nil
+	}
+	interval := time.Millisecond
+	d := NewDiscovery(nil, "test", interval, refresh)
+
+	ch := make(chan []*targetgroup.Group)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go d.Run(ctx, ch)
+
+	tg := <-ch
+	require.Equal(t, tg1, tg)
+
+	tg = <-ch
+	require.Equal(t, tg2, tg)
+
+	failureCount, err := getCounterValue(d.failures)
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, float64(0), failureCount)
+}
+
+func getCounterValue(metric prometheus.Metric) (float64, error) {
+	var m = &dto.Metric{}
+	if err := metric.Write(m); err != nil {
+		return 0, err
+	}
+	return m.Counter.GetValue(), nil
+}
+
+func resetMetrics() {
+	failuresCount.Reset()
+	duration.Reset()
 }
