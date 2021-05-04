@@ -15,10 +15,11 @@ package refresh
 
 import (
 	"context"
+	"errors"
+	"github.com/go-kit/kit/log/level"
 	"time"
 
 	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/prometheus/prometheus/discovery/targetgroup"
@@ -70,15 +71,14 @@ func NewDiscovery(l log.Logger, mech string, interval time.Duration, refreshf fu
 	}
 }
 
+// ErrSkipUpdate can be returned from a refresh() call to short
+// circuit the update without error.
+var ErrSkipUpdate = errors.New("skip discovery update")
+
 // Run implements the Discoverer interface.
 func (d *Discovery) Run(ctx context.Context, ch chan<- []*targetgroup.Group) {
 	// Get an initial set right away.
-	tgs, err := d.refresh(ctx)
-	if err != nil {
-		if ctx.Err() != context.Canceled {
-			level.Error(d.logger).Log("msg", "Unable to refresh target groups", "err", err.Error())
-		}
-	} else {
+	if tgs, err := d.refresh(ctx); err == nil {
 		select {
 		case ch <- tgs:
 		case <-ctx.Done():
@@ -94,9 +94,6 @@ func (d *Discovery) Run(ctx context.Context, ch chan<- []*targetgroup.Group) {
 		case <-ticker.C:
 			tgs, err := d.refresh(ctx)
 			if err != nil {
-				if ctx.Err() != context.Canceled {
-					level.Error(d.logger).Log("msg", "Unable to refresh target groups", "err", err.Error())
-				}
 				continue
 			}
 
@@ -115,8 +112,20 @@ func (d *Discovery) refresh(ctx context.Context) ([]*targetgroup.Group, error) {
 	now := time.Now()
 	defer d.duration.Observe(time.Since(now).Seconds())
 	tgs, err := d.refreshf(ctx)
-	if err != nil {
-		d.failures.Inc()
+
+	if err == nil {
+		return tgs, nil
+	}
+
+	if errors.Is(err, ErrSkipUpdate) {
+		level.Debug(d.logger).Log("msg", "Update skipped", "reason", err.Error())
+		return tgs, err
+	}
+
+	d.failures.Inc()
+
+	if ctx.Err() != context.Canceled {
+		level.Error(d.logger).Log("msg", "Unable to refresh target groups", "err", err.Error())
 	}
 	return tgs, err
 }
