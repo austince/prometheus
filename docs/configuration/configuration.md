@@ -243,6 +243,10 @@ hetzner_sd_configs:
 kubernetes_sd_configs:
   [ - <kubernetes_sd_config> ... ]
 
+# List of Kuma service discovery configurations.
+kuma_sd_configs:
+  [ - <kuma_sd_config> ... ]
+
 # List of Lightsail service discovery configurations.
 lightsail_sd_configs:
   [ - <lightsail_sd_config> ... ]
@@ -1415,6 +1419,92 @@ for a detailed example of configuring Prometheus for Kubernetes.
 
 You may wish to check out the 3rd party [Prometheus Operator](https://github.com/coreos/prometheus-operator),
 which automates the Prometheus setup on top of Kubernetes.
+
+### `<kuma_sd_config>`
+
+Kuma SD configurations allow retrieving scrape target from the [Kuma](https://kuma.io) control plane.
+
+This SD discovers "monitoring assignments" based on Kuma [Dataplane Proxies](https://kuma.io/docs/latest/documentation/dps-and-data-model),
+via the MADS (Monitoring Assignment Discovery Service) xDS API, and will create a target for each proxy
+inside a Prometheus-enabled mesh.
+
+Available xDS-specific meta labels:
+
+* `__meta_xds_server`: the xDS management server address, running on the Kuma Control Plane
+* `__meta_xds_protocol_version`: the xDS protocol version used to communicate with the server
+* `__meta_xds_client_id`: the xDS client ID sent to the server
+
+Available Kuma-specific meta labels:
+
+* `__meta_kuma_mesh`: the name of the proxy's Mesh 
+* `__meta_kuma_dataplane`: the name of the proxy
+* `__meta_kuma_service`: the name of the proxy's associated Service
+* `__meta_kuma_api_version`: the name of the proxy's associated Service
+
+All user-defined [tags](https://kuma.io/docs/latest/documentation/dps-and-data-model/#tags) will be translated into
+labels, following the [Prometheus label spec](https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels),
+under a common prefix that is guaranteed to not be overwritten by Prometheus in future versions.
+
+* `__meta_kuma_label_{tag}`:
+
+See below for the configuration options for Kuma MonitoringAssignment discovery:
+
+```yaml
+# Address of the Kuma Control Plane's MADS xDS server.
+server: <string>
+# An arbitrary identifier to send to the MADS server, which should be unique to this instance.
+client_id: <string>
+# The xDS protocol version. Only v3 is currently supported.
+[ protocol_version: <string> | default = v3 ]
+# The MADS API version. Only v1 is currently supported.
+[ api_version: <string> | default = v1 ] 
+
+## HTTP Configuration
+
+# The time after which the monitoring assignments are refreshed.
+[ refresh_interval: <duration> | default = 30s ]
+
+# Optional proxy URL.
+[ proxy_url: <string> ]
+
+# TLS configuration.
+tls_config:
+  [ <tls_config> ]
+
+# Authentication information used to authenticate to the Docker daemon.
+# Note that `basic_auth` and `authorization` options are
+# mutually exclusive.
+# password and password_file are mutually exclusive.
+
+# Optional HTTP basic authentication information.
+basic_auth:
+  [ username: <string> ]
+  [ password: <secret> ]
+  [ password_file: <string> ]
+
+# Optional the `Authorization` header configuration.
+authorization:
+  # Sets the authentication type.
+  [ type: <string> | default: Bearer ]
+  # Sets the credentials. It is mutually exclusive with
+  # `credentials_file`.
+  [ credentials: <secret> ]
+  # Sets the credentials with the credentials read from the configured file.
+  # It is mutually exclusive with `credentials`.
+  [ credentials_file: <filename> ]
+
+# Optional OAuth 2.0 configuration.
+# Cannot be used at the same time as basic_auth or authorization.
+oauth2:
+  [ <oauth2> ]
+
+# Configure whether HTTP requests follow HTTP 3xx redirects.
+[ follow_redirects: <bool> | default = true ]
+
+```
+
+The [relabeling phase](#relabel_config) is the preferred and more powerful way
+to filter proxies and user-defined tags.
 
 ### `<lightsail_sd_config>`
 
