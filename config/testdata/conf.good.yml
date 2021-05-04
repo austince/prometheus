@@ -193,6 +193,13 @@ scrape_configs:
     username: 'myusername'
     password_file: valid_password_file
 
+- job_name: service-kuma
+
+  kuma_sd_configs:
+  - client_id: prometheus-1
+    api_version: v1
+    server: http://kuma-control-plane.kuma-system.svc:5676
+    protocol_version: v3
 
 - job_name: service-marathon
   marathon_sd_configs:

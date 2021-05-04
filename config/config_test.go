@@ -45,6 +45,7 @@ import (
 	"github.com/prometheus/prometheus/discovery/scaleway"
 	"github.com/prometheus/prometheus/discovery/targetgroup"
 	"github.com/prometheus/prometheus/discovery/triton"
+	"github.com/prometheus/prometheus/discovery/xds"
 	"github.com/prometheus/prometheus/discovery/zookeeper"
 	"github.com/prometheus/prometheus/pkg/labels"
 	"github.com/prometheus/prometheus/pkg/relabel"
@@ -429,6 +430,32 @@ var expectedConf = &Config{
 						},
 					},
 					HTTPClientConfig: config.DefaultHTTPClientConfig,
+				},
+			},
+		},
+		{
+			JobName: "service-kuma",
+
+			HonorTimestamps: true,
+			ScrapeInterval:  model.Duration(15 * time.Second),
+			ScrapeTimeout:   DefaultGlobalConfig.ScrapeTimeout,
+
+			MetricsPath:      DefaultScrapeConfig.MetricsPath,
+			Scheme:           DefaultScrapeConfig.Scheme,
+			HTTPClientConfig: config.DefaultHTTPClientConfig,
+
+			ServiceDiscoveryConfigs: discovery.Configs{
+				&xds.KumaSDConfig{
+					SDConfig: xds.SDConfig{
+						ProtocolVersion: xds.ProtocolV3,
+						Server:          "http://kuma-control-plane.kuma-system.svc:5676",
+						HTTP: xds.HTTPConfig{
+							HTTPClientConfig: config.DefaultHTTPClientConfig,
+							RefreshInterval:  model.Duration(30 * time.Second),
+						},
+						ClientID: "prometheus-1",
+					},
+					APIVersion: xds.KumaMadsV1,
 				},
 			},
 		},
