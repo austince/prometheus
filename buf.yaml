@@ -1,0 +1,15 @@
+# See https://docs.buf.build/lint-usage
+# See https://docs.buf.build/breaking-usage
+version: v1beta1
+build:
+  roots:
+    - ./prompb
+    - vendor/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis
+lint:
+  use:
+    - DEFAULT
+  except:
+    - ENUM_VALUE_PREFIX
+    - ENUM_ZERO_VALUE_SUFFIX
+    - PACKAGE_DIRECTORY_MATCH
+    - PACKAGE_VERSION_SUFFIX
