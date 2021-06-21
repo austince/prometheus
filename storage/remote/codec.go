@@ -204,7 +204,7 @@ func StreamChunkedReadResponses(
 
 		frameBytesLeft := maxBytesInFrame
 		for _, lbl := range lbls {
-			frameBytesLeft -= lbl.Size()
+			frameBytesLeft -= lbl.SizeVT()
 		}
 
 		isNext := iter.Next()
@@ -224,7 +224,7 @@ func StreamChunkedReadResponses(
 				Type:      prompb.Chunk_Encoding(chk.Chunk.Encoding()),
 				Data:      chk.Chunk.Bytes(),
 			})
-			frameBytesLeft -= chks[len(chks)-1].Size()
+			frameBytesLeft -= chks[len(chks)-1].SizeVT()
 
 			// We are fine with minor inaccuracy of max bytes per frame. The inaccuracy will be max of full chunk size.
 			isNext = iter.Next()

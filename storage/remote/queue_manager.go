@@ -497,7 +497,7 @@ func (t *QueueManager) sendMetadataWithBackoff(ctx context.Context, metadata []*
 // Append queues a sample to be sent to the remote storage. Blocks until all samples are
 // enqueued on their shards or a shutdown signal is received.
 func (t *QueueManager) Append(samples []record.RefSample) bool {
-	var appendSample prompb.Sample
+	appendSample := &prompb.Sample{}
 outer:
 	for _, s := range samples {
 		t.seriesMtx.Lock()
@@ -542,7 +542,7 @@ func (t *QueueManager) AppendExemplars(exemplars []record.RefExemplar) bool {
 		return true
 	}
 
-	var appendExemplar prompb.Exemplar
+	appendExemplar := &prompb.Exemplar{}
 outer:
 	for _, e := range exemplars {
 		t.seriesMtx.Lock()
@@ -879,12 +879,12 @@ func (t *QueueManager) newShards() *shards {
 
 type writeSample struct {
 	seriesLabels labels.Labels
-	sample       prompb.Sample
+	sample       *prompb.Sample
 }
 
 type writeExemplar struct {
 	seriesLabels labels.Labels
-	exemplar     prompb.Exemplar
+	exemplar     *prompb.Exemplar
 }
 
 type shards struct {
@@ -1024,8 +1024,8 @@ func (s *shards) runShard(ctx context.Context, shardID int, queue chan interface
 		sampleBuffer                                 = allocateSampleBuffer(max)
 
 		buf            []byte
-		pendingData    []prompb.TimeSeries
-		exemplarBuffer [][]prompb.Exemplar
+		pendingData    []*prompb.TimeSeries
+		exemplarBuffer [][]*prompb.Exemplar
 	)
 	totalPending := max
 	if s.qm.sendExemplars {
@@ -1033,7 +1033,7 @@ func (s *shards) runShard(ctx context.Context, shardID int, queue chan interface
 		totalPending += maxExemplars
 	}
 
-	pendingData = make([]prompb.TimeSeries, totalPending)
+	pendingData = make([]*prompb.TimeSeries, totalPending)
 
 	timer := time.NewTimer(time.Duration(s.qm.cfg.BatchSendDeadline))
 	stop := func() {
@@ -1286,10 +1286,10 @@ func allocateSampleBuffer(capacity int) [][]*prompb.Sample {
 	return buf
 }
 
-func allocateExemplarBuffer(capacity int) [][]prompb.Exemplar {
-	buf := make([][]prompb.Exemplar, capacity)
+func allocateExemplarBuffer(capacity int) [][]*prompb.Exemplar {
+	buf := make([][]*prompb.Exemplar, capacity)
 	for i := range buf {
-		buf[i] = []prompb.Exemplar{{}}
+		buf[i] = []*prompb.Exemplar{{}}
 	}
 	return buf
 }

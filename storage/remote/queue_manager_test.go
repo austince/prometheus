@@ -519,8 +519,8 @@ func getSeriesNameFromRef(r record.RefSeries) string {
 type TestWriteClient struct {
 	receivedSamples   map[string][]*prompb.Sample
 	expectedSamples   map[string][]*prompb.Sample
-	receivedExemplars map[string][]prompb.Exemplar
-	expectedExemplars map[string][]prompb.Exemplar
+	receivedExemplars map[string][]*prompb.Exemplar
+	expectedExemplars map[string][]*prompb.Exemplar
 	receivedMetadata  map[string][]*prompb.MetricMetadata
 	withWaitGroup     bool
 	wg                sync.WaitGroup
@@ -564,12 +564,12 @@ func (c *TestWriteClient) expectExemplars(ss []record.RefExemplar, series []reco
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
-	c.expectedExemplars = map[string][]prompb.Exemplar{}
-	c.receivedExemplars = map[string][]prompb.Exemplar{}
+	c.expectedExemplars = map[string][]*prompb.Exemplar{}
+	c.receivedExemplars = map[string][]*prompb.Exemplar{}
 
 	for _, s := range ss {
 		seriesName := getSeriesNameFromRef(series[s.Ref])
-		e := prompb.Exemplar{
+		e := &prompb.Exemplar{
 			Labels:    labelsToLabelsProto(s.Labels, nil),
 			Timestamp: s.T,
 			Value:     s.V,
